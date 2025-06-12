@@ -14,3 +14,7 @@ data
 
 # pyenv
 .python-version
+
+# vscode
+.vscode
+.vs
