@@ -85,3 +85,35 @@ p.game-description {
     max-height: 200px; /* Set your desired max height */
     overflow-y: auto; /* Enable vertical scrolling */
 }
+
+/* List view styles */
+.game-list-icon {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.game-list-title {
+    font-weight: 500;
+    color: #fff;
+}
+
+.game-list-id {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #adb5bd;
+}
+
+.game-list-row:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.table-dark th {
+    border-color: #495057;
+    color: #fff;
+}
+
+.table-dark td {
+    border-color: #495057;
+}
