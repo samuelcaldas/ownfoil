@@ -1,0 +1,167 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement for Ownfoil
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to suggest a feature! Please fill out the information below to help us understand your request.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please ensure you've completed these steps before submitting
+      options:
+        - label: I have searched existing issues to make sure this feature hasn't been requested already
+          required: true
+        - label: I have read the [README](https://github.com/samuelcaldas/ownfoil/blob/master/README.md) and [roadmap](https://github.com/samuelcaldas/ownfoil/blob/master/README.md#roadmap)
+          required: true
+        - label: This feature aligns with the goals and scope of the Ownfoil project
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: A brief summary of the feature you'd like to see
+      placeholder: Provide a concise summary of the feature
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What use case does it address?
+      placeholder: |
+        Is your feature request related to a problem? Please describe.
+        A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented
+      placeholder: |
+        A clear and concise description of what you want to happen.
+        How should this feature work? What should the user experience be like?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: Which area of Ownfoil does this feature relate to?
+      options:
+        - Library Management
+        - Tinfoil Shop
+        - Web Interface/UI
+        - Authentication & Users
+        - File Processing
+        - Nintendo Switch Integration
+        - Docker/Deployment
+        - Configuration/Settings
+        - Performance/Optimization
+        - Security
+        - API/Integration
+        - Other (please specify)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How important is this feature to you?
+      options:
+        - Nice to have
+        - Would be helpful
+        - Important for my use case
+        - Critical/Blocking my workflow
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Have you considered any alternative solutions or workarounds?
+      placeholder: |
+        A clear and concise description of any alternative solutions or features you've considered.
+        Are there any current workarounds you're using?
+    validations:
+      required: false
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples and References
+      description: Are there any examples of this feature in other applications or references that might help?
+      placeholder: |
+        Links to similar features in other applications, screenshots, mockups, or any other references
+    validations:
+      required: false
+
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical Considerations
+      description: Any technical details, constraints, or implementation ideas you'd like to share
+      placeholder: |
+        If you have technical knowledge, please share any implementation ideas, 
+        potential challenges, or technical requirements you think should be considered
+    validations:
+      required: false
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Describe specific scenarios where this feature would be useful
+      placeholder: |
+        1. As a user, I want to...
+        2. When managing my library, I need to...
+        3. For my Tinfoil shop, it would be helpful to...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact Areas
+      description: Which areas might be affected by this feature?
+      options:
+        - label: User Interface/Experience
+        - label: Database Schema
+        - label: File System Operations
+        - label: Docker Configuration
+        - label: API Endpoints
+        - label: Security/Authentication
+        - label: Performance
+        - label: Documentation
+
+  - type: checkboxes
+    id: contributing
+    attributes:
+      label: Contributing
+      options:
+        - label: I would be willing to help implement this feature
+          required: false
+        - label: I would be willing to test this feature when available
+          required: false
+        - label: I would be willing to help with documentation for this feature
+          required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, mockups, or information about the feature request
+      placeholder: Any additional information that might help us understand your request

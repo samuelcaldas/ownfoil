@@ -1,25 +1,98 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+# Dependabot configuration for automated dependency updates
+# Documentation: https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
 updates:
-  # Maintain dependencies for GitHub Actions
+  # GitHub Actions dependencies
   - package-ecosystem: "github-actions"
     directory: "/"
     target-branch: "develop"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    reviewers:
+      - "samuelcaldas"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
 
+  # Docker dependencies
   - package-ecosystem: "docker"
     directory: "/"
     target-branch: "develop"
     schedule:
-      interval: "weekly"
-      
+      interval: "weekly" 
+      day: "tuesday"
+      time: "06:00"
+    reviewers:
+      - "samuelcaldas"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # Python dependencies
   - package-ecosystem: "pip"
     directory: "/"
     target-branch: "develop"
     schedule:
       interval: "weekly"
+      day: "wednesday"
+      time: "06:00"
+    reviewers:
+      - "samuelcaldas"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+    # Allow both minor and patch updates for security
+    allow:
+      - dependency-type: "direct"
+        update-type: "version-update:semver-patch"
+      - dependency-type: "direct"
+        update-type: "version-update:semver-minor"
+      - dependency-type: "indirect"
+        update-type: "security-update"
+    # Group related updates together
+    groups:
+      flask-ecosystem:
+        patterns:
+          - "flask*"
+          - "werkzeug"
+          - "*flask*"
+      security-tools:
+        patterns:
+          - "cryptography"
+          - "pycryptodome"
+          - "requests"
+      development-tools:
+        patterns:
+          - "pytest*"
+          - "black"
+          - "flake8"
+          - "mypy"
+
+  # Submodule dependencies (if any)
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    target-branch: "develop"
+    schedule:
+      interval: "monthly"
+    reviewers:
+      - "samuelcaldas"
+    commit-message:
+      prefix: "chore(submodules)"
+    labels:
+      - "dependencies"
+      - "submodules"

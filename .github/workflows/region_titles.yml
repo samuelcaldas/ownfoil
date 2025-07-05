@@ -1,44 +1,57 @@
-# This is a basic workflow to help you get started with Actions
-
+# Build Nintendo Switch titledb for different regions and languages
 name: Build titledb
 
 # Controls when the workflow will run
 on:
   schedule:
-    - cron: '0 */4 * * *'
+    - cron: '0 */4 * * *'  # Every 4 hours
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
+    name: Build Nintendo Switch titledb
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # Runs a set of commands using the runners shell
-      - name: Setup folders
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # Install system dependencies and setup build environment
+      - name: Setup build environment
         run: |
-          sudo apt update && sudo apt install -y libcurl4-openssl-dev libssl-dev
+          sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libssl-dev
           git clone https://github.com/blawar/nut
           cd nut
           pip install -r requirements.txt
-          mkdir build_artefacts
+          mkdir -p build_artefacts
           git clone --depth=1 https://github.com/blawar/titledb
           titledb_commit=$(git -C titledb rev-parse --short HEAD)
           echo "formatted_date=$(date +"%Y-%m-%d_%H%M%S")" >> $GITHUB_ENV
+          echo "titledb_commit=${titledb_commit}" >> $GITHUB_ENV
           touch "build_artefacts/latest_${titledb_commit}"
 
-      - uses: jannekem/run-python-script-action@v1
-        name: Generate region titles
+      - name: Generate region titles
+        uses: jannekem/run-python-script-action@v1
         with:
           script: |
             import os, sys
@@ -46,28 +59,70 @@ jobs:
 
             os.chdir('nut')
             sys.path.append(os.getcwd())
-            import nut
 
-            with open('titledb/languages.json') as f:
-              languages = json.load(f)
-              languages = dict(sorted(languages.items()))
-            for region in languages.keys():
-              for language in languages[region]:
-                  print(region, language)
-                  nut.importRegion(region, language)
-                  os.rename('titledb/titles.json', f'build_artefacts/titles.{region}.{language}.json')
+            try:
+                import nut
+            except ImportError as e:
+                print(f"Failed to import nut: {e}")
+                sys.exit(1)
 
-            for f in [
-              'cnmts.json',
-              'languages.json',
-              'versions.json',
-              'versions.txt',
-            ]:
-              os.rename(f'titledb/{f}', f'build_artefacts/{f}')
-            
+            try:
+                with open('titledb/languages.json') as f:
+                    languages = json.load(f)
+                    languages = dict(sorted(languages.items()))
 
-      - uses: actions/upload-artifact@v4
+                for region in languages.keys():
+                    for language in languages[region]:
+                        print(f"Processing region: {region}, language: {language}")
+                        nut.importRegion(region, language)
+                        os.rename('titledb/titles.json', f'build_artefacts/titles.{region}.{language}.json')
+
+                # Copy additional files
+                for f in [
+                    'cnmts.json',
+                    'languages.json',
+                    'versions.json',
+                    'versions.txt',
+                ]:
+                    src_file = f'titledb/{f}'
+                    if os.path.exists(src_file):
+                        os.rename(src_file, f'build_artefacts/{f}')
+                    else:
+                        print(f"Warning: {src_file} not found")
+
+                print("Titledb generation completed successfully")
+
+            except Exception as e:
+                print(f"Error during titledb generation: {e}")
+                sys.exit(1)
+
+      - name: Upload titledb artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: titledb
+          name: titledb-${{ env.formatted_date }}-${{ env.titledb_commit }}
           path: nut/build_artefacts/*
           compression-level: 9
+          retention-days: 30
+
+      - name: Generate build summary
+        if: always()
+        run: |
+          echo "## 🎮 Nintendo Switch Titledb Build" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Date:** ${{ env.formatted_date }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Titledb Commit:** ${{ env.titledb_commit }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ -d "nut/build_artefacts" ]]; then
+            echo "### Generated Files:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            ls -la nut/build_artefacts/ >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+
+            file_count=$(ls -1 nut/build_artefacts/ | wc -l)
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Total files generated:** $file_count" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Build failed** - No artifacts generated" >> $GITHUB_STEP_SUMMARY
+          fi
+

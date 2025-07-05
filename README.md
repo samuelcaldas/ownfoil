@@ -2,6 +2,9 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/samuelcaldas/ownfoil)](https://hub.docker.com/r/samuelcaldas/ownfoil)
 [![Docker Image Size (latest semver)](https://img.shields.io/docker/image-size/samuelcaldas/ownfoil?sort=date&arch=amd64
 )](https://hub.docker.com/r/samuelcaldas/ownfoil/tags)
+[![Python CI](https://github.com/samuelcaldas/ownfoil/actions/workflows/python-ci.yml/badge.svg)](https://github.com/samuelcaldas/ownfoil/actions/workflows/python-ci.yml)
+[![Security Scan](https://github.com/samuelcaldas/ownfoil/actions/workflows/security.yml/badge.svg)](https://github.com/samuelcaldas/ownfoil/actions/workflows/security.yml)
+[![Docker Build](https://github.com/samuelcaldas/ownfoil/actions/workflows/docker.yml/badge.svg)](https://github.com/samuelcaldas/ownfoil/actions/workflows/docker.yml)
 
 Ownfoil is a Nintendo Switch library manager, that will also turn your library into a fully customizable and self-hosted Tinfoil Shop. The goal of this project is to manage your library, identify any missing content (DLCs or updates) and provide a user friendly way to browse your content. Some of the features include:
 
