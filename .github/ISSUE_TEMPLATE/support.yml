@@ -1,0 +1,141 @@
+name: ❓ Support/Question
+description: Get help with using Ownfoil or ask questions
+title: "[Question]: "
+labels: ["question", "support"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reaching out! Please provide as much detail as possible to help us assist you.
+        
+        > **Note:** For urgent security issues, please do not use this template. Instead, refer to our [Security Policy](https://github.com/samuelcaldas/ownfoil/security/policy).
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please ensure you've completed these steps before asking for help
+      options:
+        - label: I have searched existing issues and discussions for similar questions
+          required: true
+        - label: I have read the [README](https://github.com/samuelcaldas/ownfoil/blob/master/README.md) and available documentation
+          required: true
+        - label: I have tried basic troubleshooting steps (restart, check logs, etc.)
+          required: false
+
+  - type: dropdown
+    id: question-type
+    attributes:
+      label: Question Type
+      description: What type of help do you need?
+      options:
+        - Installation/Setup Help
+        - Configuration Help
+        - Usage/How-to Question
+        - Troubleshooting/Error Help
+        - Docker/Deployment Question
+        - Nintendo Switch/Tinfoil Integration
+        - Library Management Question
+        - Performance/Optimization Question
+        - General Question
+        - Other (please specify)
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What do you need help with? Please be as specific as possible.
+      placeholder: Describe your question or what you're trying to accomplish
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation Method
+      description: How did you install Ownfoil?
+      options:
+        - Docker (docker run)
+        - Docker Compose
+        - Python (direct installation)
+        - Haven't installed yet
+        - Other (please specify)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Ownfoil Version
+      description: What version of Ownfoil are you running?
+      placeholder: "e.g., v1.2.3, latest, or not installed yet"
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Linux (Ubuntu/Debian)
+        - Linux (CentOS/RHEL/Fedora)
+        - Linux (Arch)
+        - Linux (Other)
+        - Windows 10/11
+        - Windows Server
+        - macOS
+        - Synology NAS
+        - QNAP NAS
+        - Other NAS
+        - Other (please specify)
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: What have you tried so far? Any relevant configuration or setup details?
+      placeholder: |
+        - What steps have you already tried?
+        - Any relevant configuration files (remove sensitive information)
+        - Error messages or logs you've encountered
+        - Your specific use case or setup
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs/Error Messages
+      description: If you're experiencing errors, please include relevant log output
+      placeholder: |
+        Paste any relevant logs here. For Docker:
+        docker logs <container_name>
+      render: shell
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Outcome
+      description: What are you trying to achieve? What would a successful resolution look like?
+      placeholder: Describe what you want to accomplish or what you expect to happen
+
+  - type: checkboxes
+    id: urgency
+    attributes:
+      label: Urgency
+      description: How urgent is this question?
+      options:
+        - label: This is blocking my ability to use Ownfoil
+        - label: This is preventing me from completing my setup
+        - label: This is for learning/understanding purposes
+        - label: This is for future planning/consideration
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Screenshots/Additional Information
+      description: Any screenshots, configuration files, or additional information that might help
+      placeholder: Drag and drop screenshots here or paste additional relevant information

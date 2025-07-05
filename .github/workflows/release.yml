@@ -1,0 +1,243 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.2.3)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+  discussions: write
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          
+          # Remove 'v' prefix if present
+          VERSION_NUM=${VERSION#v}
+          
+          echo "version=${VERSION_NUM}" >> $GITHUB_OUTPUT
+          echo "tag=${VERSION}" >> $GITHUB_OUTPUT
+          
+          echo "Release version: ${VERSION_NUM}"
+          echo "Release tag: ${VERSION}"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected format: X.Y.Z or X.Y.Z-suffix"
+            exit 1
+          fi
+          echo "✅ Version format is valid: $VERSION"
+
+      - name: Check if tag exists
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "✅ Tag $TAG exists"
+          else
+            echo "❌ Tag $TAG does not exist"
+            if [[ "${{ github.event_name }}" == "push" ]]; then
+              exit 1
+            fi
+          fi
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: validate-release
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Generate changelog from git commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [[ -n "$LAST_TAG" ]]; then
+            echo "Generating changelog since $LAST_TAG"
+            CHANGELOG=$(git log --pretty=format:"- %s" "$LAST_TAG"..HEAD | grep -E "^- (feat|fix|perf|refactor|docs|style|test|chore)" || echo "- Various improvements and bug fixes")
+          else
+            echo "No previous tag found, creating initial changelog"
+            CHANGELOG="- Initial release"
+          fi
+          
+          # Save changelog to file and output
+          cat > CHANGELOG.md << EOF
+          ## What's Changed
+          
+          $CHANGELOG
+          
+          ## Docker Images
+          
+          Multi-architecture Docker images are available:
+          
+          \`\`\`bash
+          docker pull samuelcaldas/ownfoil:${{ needs.validate-release.outputs.version }}
+          docker pull samuelcaldas/ownfoil:latest
+          \`\`\`
+          
+          **Supported platforms:**
+          - linux/amd64
+          - linux/arm64  
+          - linux/arm/v7
+          - linux/arm/v6
+          
+          ## Installation
+          
+          See the [README](https://github.com/samuelcaldas/ownfoil#installation) for detailed installation instructions.
+          
+          **Full Changelog**: https://github.com/samuelcaldas/ownfoil/compare/$LAST_TAG...${{ needs.validate-release.outputs.tag }}
+          EOF
+          
+          echo "changelog_file=CHANGELOG.md" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate-release.outputs.tag }}
+          name: Release ${{ needs.validate-release.outputs.version }}
+          body_path: ${{ steps.changelog.outputs.changelog_file }}
+          draft: false
+          prerelease: ${{ contains(needs.validate-release.outputs.version, '-') }}
+          generate_release_notes: true
+          discussion_category_name: "Announcements"
+
+  build-and-publish:
+    name: Build and Publish Docker Images
+    runs-on: ubuntu-latest
+    needs: [validate-release, create-release]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: samuelcaldas/ownfoil
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=ownfoil
+            org.opencontainers.image.description=Nintendo Switch library manager and self-hosted Tinfoil Shop
+            org.opencontainers.image.url=https://github.com/samuelcaldas/ownfoil
+            org.opencontainers.image.source=https://github.com/samuelcaldas/ownfoil
+            org.opencontainers.image.version=${{ needs.validate-release.outputs.version }}
+            org.opencontainers.image.created={{.Date}}
+            org.opencontainers.image.revision={{.FullCommit}}
+            org.opencontainers.image.licenses=MIT
+
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+  release-summary:
+    name: Release Summary
+    runs-on: ubuntu-latest
+    needs: [validate-release, create-release, build-and-publish]
+    if: always()
+    
+    steps:
+      - name: Release Summary
+        run: |
+          echo "## 🚀 Release ${{ needs.validate-release.outputs.version }} Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** ${{ needs.validate-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag:** ${{ needs.validate-release.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Status" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.validate-release.result }}" == "success" ]]; then
+            echo "- ✅ Release validation: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Release validation: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.create-release.result }}" == "success" ]]; then
+            echo "- ✅ GitHub release: Created" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ GitHub release: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.build-and-publish.result }}" == "success" ]]; then
+            echo "- ✅ Docker images: Published" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Docker images: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Verify the release at https://github.com/samuelcaldas/ownfoil/releases" >> $GITHUB_STEP_SUMMARY
+          echo "2. Test the Docker images: \`docker pull samuelcaldas/ownfoil:${{ needs.validate-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. Update documentation if needed" >> $GITHUB_STEP_SUMMARY
+          echo "4. Announce the release to users" >> $GITHUB_STEP_SUMMARY

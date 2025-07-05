@@ -8,17 +8,28 @@ on:
     tags:
       - '*.*.*'
 
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     if: "!startsWith(github.ref, 'refs/heads/dependabot') && !startsWith(github.event.head_commit.message, 'ci') && !startsWith(github.event.head_commit.message, 'doc')"
     runs-on: ubuntu-latest
+    
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    
     steps:
       # Get the repository's code
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
       
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
@@ -49,6 +60,15 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+          labels: |
+            org.opencontainers.image.title={{.Name}}
+            org.opencontainers.image.description=Nintendo Switch library manager and self-hosted Tinfoil Shop
+            org.opencontainers.image.url=https://github.com/samuelcaldas/ownfoil
+            org.opencontainers.image.source=https://github.com/samuelcaldas/ownfoil
+            org.opencontainers.image.version={{.Version}}
+            org.opencontainers.image.created={{.Date}}
+            org.opencontainers.image.revision={{.FullCommit}}
+            org.opencontainers.image.licenses=MIT
 
       - name: Set platforms based on branch
         run: |
@@ -66,3 +86,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true

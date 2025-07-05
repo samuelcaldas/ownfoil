@@ -12,27 +12,36 @@ on:
           - full
           - python-only
           - docker-only
+          - validation-only
+
+permissions:
+  contents: read
 
 jobs:
   setup-environment:
     name: Setup Development Environment
     runs-on: ubuntu-latest
     
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.inputs.setup_type }}
+      cancel-in-progress: true
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Set up Python
-        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' }}
+        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' || github.event.inputs.setup_type == 'validation-only' }}
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
       - name: Install Python dependencies
-        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' }}
+        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' || github.event.inputs.setup_type == 'validation-only' }}
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -42,15 +51,13 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Create development directories
-        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' }}
+        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' || github.event.inputs.setup_type == 'validation-only' }}
         run: |
-          mkdir -p app/config
-          mkdir -p app/data
-          mkdir -p games
+          mkdir -p app/config app/data games
           chmod 755 app/config app/data games
 
       - name: Validate Python application structure
-        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' }}
+        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' || github.event.inputs.setup_type == 'validation-only' }}
         run: |
           echo "Validating Python application structure..."
           python -c "
@@ -73,14 +80,14 @@ jobs:
                   missing_files.append(file)
           
           if missing_files:
-              print(f'Missing required files: {missing_files}')
+              print(f'❌ Missing required files: {missing_files}')
               sys.exit(1)
           else:
-              print('All required application files are present')
+              print('✅ All required application files are present')
           "
 
       - name: Test Python imports
-        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' }}
+        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' || github.event.inputs.setup_type == 'validation-only' }}
         run: |
           echo "Testing Python imports..."
           cd app
@@ -93,14 +100,14 @@ jobs:
               import requests
               import watchdog
               import werkzeug
-              print('✓ All required Python packages imported successfully')
+              print('✅ All required Python packages imported successfully')
           except ImportError as e:
-              print(f'✗ Import error: {e}')
+              print(f'❌ Import error: {e}')
               exit(1)
           "
 
       - name: Validate Flask application
-        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' }}
+        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' || github.event.inputs.setup_type == 'validation-only' }}
         run: |
           echo "Validating Flask application..."
           cd app
@@ -111,9 +118,9 @@ jobs:
           try:
               from app import app
               with app.app_context():
-                  print('✓ Flask application initialized successfully')
+                  print('✅ Flask application initialized successfully')
           except Exception as e:
-              print(f'✗ Flask application validation failed: {e}')
+              print(f'❌ Flask application validation failed: {e}')
               exit(1)
           "
 
@@ -122,14 +129,14 @@ jobs:
         run: |
           echo "Testing Docker build..."
           docker build -t ownfoil-test:latest .
-          echo "✓ Docker build completed successfully"
+          echo "✅ Docker build completed successfully"
 
       - name: Test Docker compose configuration
         if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'docker-only' }}
         run: |
           echo "Validating docker-compose configuration..."
           docker compose config
-          echo "✓ Docker compose configuration is valid"
+          echo "✅ Docker compose configuration is valid"
 
       - name: Generate development configuration
         if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'python-only' }}
@@ -153,13 +160,52 @@ jobs:
             host: ""
             hauth: ""
           EOF
-          echo "✓ Development configuration created"
+          echo "✅ Development configuration created"
+
+      - name: Run integration test
+        if: ${{ github.event.inputs.setup_type == 'full' || github.event.inputs.setup_type == 'validation-only' }}
+        timeout-minutes: 2
+        run: |
+          echo "Running integration test..."
+          cd app
+          timeout 30s python app.py &
+          APP_PID=$!
+          
+          # Wait for application to start
+          sleep 15
+          
+          # Test if application is responding
+          if curl -f http://localhost:8465 > /dev/null 2>&1; then
+            echo "✅ Application is responding on port 8465"
+            echo "✅ Integration test passed"
+          else
+            echo "❌ Application is not responding"
+            exit 1
+          fi
+          
+          # Clean up
+          kill $APP_PID 2>/dev/null || true
+          wait $APP_PID 2>/dev/null || true
 
       - name: Setup development environment summary
+        if: always()
         run: |
-          echo "## Development Environment Setup Complete 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Development Environment Setup" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Setup Type: ${{ github.event.inputs.setup_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Setup Type:** ${{ github.event.inputs.setup_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ job.status }}" == "success" ]]; then
+            echo "### ✅ Setup Complete!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Your development environment has been successfully validated." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Setup Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "There were issues with the setup. Please check the logs above." >> $GITHUB_STEP_SUMMARY
+          fi
+          
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Quick Start Commands:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -210,59 +256,3 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Default Admin User:" >> $GITHUB_STEP_SUMMARY
           echo "Create your first admin user through the web interface at http://localhost:8465/settings" >> $GITHUB_STEP_SUMMARY
-
-  validate-setup:
-    name: Validate Complete Setup
-    needs: setup-environment
-    runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.setup_type == 'full' }}
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run integration test
-        run: |
-          echo "Running integration test..."
-          cd app
-          timeout 30s python app.py &
-          APP_PID=$!
-          
-          # Wait for application to start
-          sleep 10
-          
-          # Test if application is responding
-          if curl -f http://localhost:8465 > /dev/null 2>&1; then
-            echo "✓ Application is responding on port 8465"
-            echo "✓ Integration test passed"
-          else
-            echo "✗ Application is not responding"
-            exit 1
-          fi
-          
-          # Clean up
-          kill $APP_PID 2>/dev/null || true
-
-      - name: Validation summary
-        run: |
-          echo "## Validation Complete ✅" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The Ownfoil development environment has been successfully set up and validated." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
-          echo "1. Clone the repository to your local machine" >> $GITHUB_STEP_SUMMARY
-          echo "2. Follow the setup commands from the previous step" >> $GITHUB_STEP_SUMMARY
-          echo "3. Start developing!" >> $GITHUB_STEP_SUMMARY
