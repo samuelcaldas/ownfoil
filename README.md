@@ -1,7 +1,7 @@
 # Ownfoil
-[![Docker Pulls](https://img.shields.io/docker/pulls/a1ex4/ownfoil)](https://hub.docker.com/r/a1ex4/ownfoil)
-[![Docker Image Size (latest semver)](https://img.shields.io/docker/image-size/a1ex4/ownfoil?sort=date&arch=amd64
-)](https://hub.docker.com/r/a1ex4/ownfoil/tags)
+[![Docker Pulls](https://img.shields.io/docker/pulls/samuelcaldas/ownfoil)](https://hub.docker.com/r/samuelcaldas/ownfoil)
+[![Docker Image Size (latest semver)](https://img.shields.io/docker/image-size/samuelcaldas/ownfoil?sort=date&arch=amd64
+)](https://hub.docker.com/r/samuelcaldas/ownfoil/tags)
 
 Ownfoil is a Nintendo Switch library manager, that will also turn your library into a fully customizable and self-hosted Tinfoil Shop. The goal of this project is to manage your library, identify any missing content (DLCs or updates) and provide a user friendly way to browse your content. Some of the features include:
 
@@ -25,7 +25,7 @@ The project is still in development, expect things to break or change without no
 
 Running this command will start the shop on port `8465` with the library in `/your/game/directory` :
 
-    docker run -d -p 8465:8465 -v /your/game/directory:/games -v /your/config/directory:/app/config --name ownfoil a1ex4/ownfoil
+    docker run -d -p 8465:8465 -v /your/game/directory:/games -v /your/config/directory:/app/config --name ownfoil samuelcaldas/ownfoil
 
 The shop is now accessible with your computer/server IP and port, i.e. `http://localhost:8465` from the same computer or `http://192.168.1.100:8465` from a device in your network.
 
@@ -37,7 +37,7 @@ version: "3"
 services:
   ownfoil:
     container_name: ownfoil
-    image: a1ex4/ownfoil
+    image: samuelcaldas/ownfoil
    # environment:
    #   # For write permission in config directory
    #   - PUID=1000
@@ -66,7 +66,7 @@ This is usefull if you don't want to remember the `docker run` command and have 
 ## Using Python
 Clone the repository using `git`, install the dependencies and you're good to go:
 ```
-$ git clone --recurse-submodules https://github.com/a1ex4/ownfoil
+$ git clone --recurse-submodules https://github.com/samuelcaldas/ownfoil
 $ cd ownfoil
 $ pip install -r requirements.txt
 $ python app/app.py
