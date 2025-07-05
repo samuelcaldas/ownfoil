@@ -17,11 +17,11 @@ jobs:
   codeql-analysis:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
-    
+
     concurrency:
       group: ${{ github.workflow }}-codeql-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -50,11 +50,11 @@ jobs:
   dependency-scan:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
-    
+
     concurrency:
       group: ${{ github.workflow }}-deps-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -95,11 +95,11 @@ jobs:
     name: Container Security Scan
     runs-on: ubuntu-latest
     if: github.event_name != 'schedule'
-    
+
     concurrency:
       group: ${{ github.workflow }}-container-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -148,11 +148,11 @@ jobs:
   secret-scan:
     name: Secret Detection
     runs-on: ubuntu-latest
-    
+
     concurrency:
       group: ${{ github.workflow }}-secrets-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -172,36 +172,36 @@ jobs:
     runs-on: ubuntu-latest
     needs: [codeql-analysis, dependency-scan, container-scan, secret-scan]
     if: always() && github.event_name == 'pull_request'
-    
+
     steps:
       - name: Security Scan Summary
         run: |
           echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [[ "${{ needs.codeql-analysis.result }}" == "success" ]]; then
             echo "- ✅ CodeQL Analysis: Passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ CodeQL Analysis: Failed or has findings" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [[ "${{ needs.dependency-scan.result }}" == "success" ]]; then
             echo "- ✅ Dependency Scan: No critical vulnerabilities" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ⚠️ Dependency Scan: Vulnerabilities found or scan failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [[ "${{ needs.container-scan.result }}" == "success" ]]; then
             echo "- ✅ Container Scan: No critical vulnerabilities" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ⚠️ Container Scan: Vulnerabilities found or scan failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [[ "${{ needs.secret-scan.result }}" == "success" ]]; then
             echo "- ✅ Secret Detection: No secrets detected" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ⚠️ Secret Detection: Potential secrets found or scan failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Check the Security tab for detailed findings and recommendations." >> $GITHUB_STEP_SUMMARY

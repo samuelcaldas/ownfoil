@@ -19,7 +19,7 @@ jobs:
     name: Build Nintendo Switch titledb
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    
+
     concurrency:
       group: ${{ github.workflow }}
       cancel-in-progress: true
@@ -59,7 +59,7 @@ jobs:
 
             os.chdir('nut')
             sys.path.append(os.getcwd())
-            
+
             try:
                 import nut
             except ImportError as e:
@@ -70,7 +70,7 @@ jobs:
                 with open('titledb/languages.json') as f:
                     languages = json.load(f)
                     languages = dict(sorted(languages.items()))
-                    
+
                 for region in languages.keys():
                     for language in languages[region]:
                         print(f"Processing region: {region}, language: {language}")
@@ -80,7 +80,7 @@ jobs:
                 # Copy additional files
                 for f in [
                     'cnmts.json',
-                    'languages.json', 
+                    'languages.json',
                     'versions.json',
                     'versions.txt',
                 ]:
@@ -89,9 +89,9 @@ jobs:
                         os.rename(src_file, f'build_artefacts/{f}')
                     else:
                         print(f"Warning: {src_file} not found")
-                        
+
                 print("Titledb generation completed successfully")
-                
+
             except Exception as e:
                 print(f"Error during titledb generation: {e}")
                 sys.exit(1)
@@ -112,16 +112,17 @@ jobs:
           echo "**Build Date:** ${{ env.formatted_date }}" >> $GITHUB_STEP_SUMMARY
           echo "**Titledb Commit:** ${{ env.titledb_commit }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [[ -d "nut/build_artefacts" ]]; then
             echo "### Generated Files:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             ls -la nut/build_artefacts/ >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            
+
             file_count=$(ls -1 nut/build_artefacts/ | wc -l)
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Total files generated:** $file_count" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Build failed** - No artifacts generated" >> $GITHUB_STEP_SUMMARY
           fi
+

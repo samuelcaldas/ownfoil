@@ -20,11 +20,11 @@ jobs:
   validate-release:
     name: Validate Release
     runs-on: ubuntu-latest
-    
+
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -39,13 +39,13 @@ jobs:
           else
             VERSION="${{ github.ref_name }}"
           fi
-          
+
           # Remove 'v' prefix if present
           VERSION_NUM=${VERSION#v}
-          
+
           echo "version=${VERSION_NUM}" >> $GITHUB_OUTPUT
           echo "tag=${VERSION}" >> $GITHUB_OUTPUT
-          
+
           echo "Release version: ${VERSION_NUM}"
           echo "Release tag: ${VERSION}"
 
@@ -75,7 +75,7 @@ jobs:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     needs: validate-release
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -92,7 +92,7 @@ jobs:
         run: |
           # Generate changelog from git commits since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
+
           if [[ -n "$LAST_TAG" ]]; then
             echo "Generating changelog since $LAST_TAG"
             CHANGELOG=$(git log --pretty=format:"- %s" "$LAST_TAG"..HEAD | grep -E "^- (feat|fix|perf|refactor|docs|style|test|chore)" || echo "- Various improvements and bug fixes")
@@ -100,35 +100,35 @@ jobs:
             echo "No previous tag found, creating initial changelog"
             CHANGELOG="- Initial release"
           fi
-          
+
           # Save changelog to file and output
           cat > CHANGELOG.md << EOF
           ## What's Changed
-          
+
           $CHANGELOG
-          
+
           ## Docker Images
-          
+
           Multi-architecture Docker images are available:
-          
+
           \`\`\`bash
           docker pull samuelcaldas/ownfoil:${{ needs.validate-release.outputs.version }}
           docker pull samuelcaldas/ownfoil:latest
           \`\`\`
-          
+
           **Supported platforms:**
           - linux/amd64
-          - linux/arm64  
+          - linux/arm64
           - linux/arm/v7
           - linux/arm/v6
-          
+
           ## Installation
-          
+
           See the [README](https://github.com/samuelcaldas/ownfoil#installation) for detailed installation instructions.
-          
+
           **Full Changelog**: https://github.com/samuelcaldas/ownfoil/compare/$LAST_TAG...${{ needs.validate-release.outputs.tag }}
           EOF
-          
+
           echo "changelog_file=CHANGELOG.md" >> $GITHUB_OUTPUT
 
       - name: Create Release
@@ -146,7 +146,7 @@ jobs:
     name: Build and Publish Docker Images
     runs-on: ubuntu-latest
     needs: [validate-release, create-release]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -204,7 +204,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [validate-release, create-release, build-and-publish]
     if: always()
-    
+
     steps:
       - name: Release Summary
         run: |
@@ -215,26 +215,26 @@ jobs:
           echo "- **Tag:** ${{ needs.validate-release.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           echo "### Status" >> $GITHUB_STEP_SUMMARY
           if [[ "${{ needs.validate-release.result }}" == "success" ]]; then
             echo "- ✅ Release validation: Passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Release validation: Failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [[ "${{ needs.create-release.result }}" == "success" ]]; then
             echo "- ✅ GitHub release: Created" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ GitHub release: Failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [[ "${{ needs.build-and-publish.result }}" == "success" ]]; then
             echo "- ✅ Docker images: Published" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Docker images: Failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
           echo "1. Verify the release at https://github.com/samuelcaldas/ownfoil/releases" >> $GITHUB_STEP_SUMMARY

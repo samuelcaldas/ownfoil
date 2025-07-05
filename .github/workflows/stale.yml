@@ -13,60 +13,61 @@ jobs:
   stale:
     name: Close stale issues and PRs
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Stale issue and PR management
         uses: actions/stale@v9
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          
+
           # Stale issue configuration
           days-before-stale: 30
           days-before-close: 7
           stale-issue-label: 'stale'
           stale-issue-message: |
-            This issue has been automatically marked as stale because it has not had recent activity. 
-            It will be closed in 7 days if no further activity occurs. 
-            
+            This issue has been automatically marked as stale because it has not had recent activity.
+            It will be closed in 7 days if no further activity occurs.
+
             To keep this issue open, please:
             - Add a comment with additional information
             - Remove the 'stale' label
             - Reference this issue in a pull request
-            
+
             Thank you for your contributions!
           close-issue-message: |
-            This issue has been automatically closed due to inactivity. 
-            
+            This issue has been automatically closed due to inactivity.
+
             If you believe this issue is still relevant, please feel free to reopen it with additional context or create a new issue.
-          
-          # Stale PR configuration  
+
+          # Stale PR configuration
           days-before-pr-stale: 14
           days-before-pr-close: 7
           stale-pr-label: 'stale'
           stale-pr-message: |
             This pull request has been automatically marked as stale because it has not had recent activity.
             It will be closed in 7 days if no further activity occurs.
-            
+
             To keep this PR open, please:
             - Push new commits
             - Add a comment explaining the current status
             - Remove the 'stale' label
-            
+
             Thank you for your contribution!
           close-pr-message: |
             This pull request has been automatically closed due to inactivity.
-            
+
             If you would like to continue with this contribution, please feel free to reopen it or create a new pull request.
-          
+
           # Labels and exemptions
           exempt-issue-labels: 'pinned,security,enhancement,bug'
           exempt-pr-labels: 'pinned,security,work-in-progress'
           any-of-labels: 'waiting for info,needs reproduction,question'
-          
+
           # Operation limits
           operations-per-run: 200
           remove-stale-when-updated: true
           debug-only: false
-          
+
           # Enable ascending order (oldest first)
           ascending: true
+

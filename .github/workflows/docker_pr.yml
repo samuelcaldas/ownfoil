@@ -17,11 +17,11 @@ jobs:
   build_docker_pr:
     name: Build multi arch Docker image on PR
     runs-on: ubuntu-latest
-    
+
     concurrency:
       group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
       cancel-in-progress: true
-    
+
     steps:
       # Get the repository's code
       - name: Checkout

@@ -24,11 +24,11 @@ jobs:
   lint-and-format:
     name: Code Quality & Linting
     runs-on: ubuntu-latest
-    
+
     concurrency:
       group: ${{ github.workflow }}-lint-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -96,11 +96,11 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.11', '3.12']
-    
+
     concurrency:
       group: ${{ github.workflow }}-test-${{ matrix.python-version }}-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -134,7 +134,7 @@ jobs:
           python -c "
           import os
           import sys
-          
+
           # Test basic imports
           try:
               import flask
@@ -156,21 +156,21 @@ jobs:
           python -c "
           import os
           import sys
-          
+
           # Set environment for testing
           os.environ['FLASK_ENV'] = 'testing'
-          
+
           try:
               # Test that main modules can be imported
               import constants
               import db
               import settings
               print('✓ Core modules imported successfully')
-              
+
               # Test Flask app creation (without running)
               from app import app
               print('✓ Flask application created successfully')
-              
+
           except Exception as e:
               print(f'✗ Application structure test failed: {e}')
               sys.exit(1)
@@ -197,7 +197,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint-and-format, test]
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -227,10 +227,10 @@ jobs:
           # Start the application in background
           timeout 30s python app.py &
           APP_PID=$!
-          
+
           # Wait for application to start
           sleep 15
-          
+
           # Test if application is responding
           if curl -f http://localhost:8465 > /dev/null 2>&1; then
             echo "✓ Application is responding on port 8465"
@@ -238,7 +238,7 @@ jobs:
             echo "✗ Application is not responding"
             exit 1
           fi
-          
+
           # Clean up
           kill $APP_PID 2>/dev/null || true
           wait $APP_PID 2>/dev/null || true

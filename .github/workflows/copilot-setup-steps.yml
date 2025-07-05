@@ -21,11 +21,11 @@ jobs:
   setup-environment:
     name: Setup Development Environment
     runs-on: ubuntu-latest
-    
+
     concurrency:
       group: ${{ github.workflow }}-${{ github.event.inputs.setup_type }}
       cancel-in-progress: true
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,22 +63,22 @@ jobs:
           python -c "
           import os
           import sys
-          
+
           # Check if main application files exist
           required_files = [
               'app/app.py',
-              'app/auth.py', 
+              'app/auth.py',
               'app/constants.py',
               'app/db.py',
               'requirements.txt',
               'Dockerfile'
           ]
-          
+
           missing_files = []
           for file in required_files:
               if not os.path.exists(file):
                   missing_files.append(file)
-          
+
           if missing_files:
               print(f'❌ Missing required files: {missing_files}')
               sys.exit(1)
@@ -114,7 +114,7 @@ jobs:
           python -c "
           import os
           os.environ['FLASK_ENV'] = 'development'
-          
+
           try:
               from app import app
               with app.app_context():
@@ -170,10 +170,10 @@ jobs:
           cd app
           timeout 30s python app.py &
           APP_PID=$!
-          
+
           # Wait for application to start
           sleep 15
-          
+
           # Test if application is responding
           if curl -f http://localhost:8465 > /dev/null 2>&1; then
             echo "✅ Application is responding on port 8465"
@@ -182,7 +182,7 @@ jobs:
             echo "❌ Application is not responding"
             exit 1
           fi
-          
+
           # Clean up
           kill $APP_PID 2>/dev/null || true
           wait $APP_PID 2>/dev/null || true
@@ -195,7 +195,7 @@ jobs:
           echo "**Setup Type:** ${{ github.event.inputs.setup_type }}" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [[ "${{ job.status }}" == "success" ]]; then
             echo "### ✅ Setup Complete!" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
@@ -205,11 +205,11 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "There were issues with the setup. Please check the logs above." >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Quick Start Commands:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [[ "${{ github.event.inputs.setup_type }}" == "full" || "${{ github.event.inputs.setup_type }}" == "python-only" ]]; then
             echo "#### Python Development:" >> $GITHUB_STEP_SUMMARY
             echo '```bash' >> $GITHUB_STEP_SUMMARY
@@ -224,7 +224,7 @@ jobs:
             echo '```' >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [[ "${{ github.event.inputs.setup_type }}" == "full" || "${{ github.event.inputs.setup_type }}" == "docker-only" ]]; then
             echo "#### Docker Development:" >> $GITHUB_STEP_SUMMARY
             echo '```bash' >> $GITHUB_STEP_SUMMARY
@@ -237,7 +237,7 @@ jobs:
             echo '```' >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "### Project Structure:" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo 'app/' >> $GITHUB_STEP_SUMMARY
