@@ -48,7 +48,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
           labels: |
-            org.opencontainers.image.title={{name}}
+            org.opencontainers.image.title={{.Name}}
             org.opencontainers.image.description={{description}}
             org.opencontainers.image.vendor={{owner}}
 
