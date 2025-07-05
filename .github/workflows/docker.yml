@@ -48,6 +48,10 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+          labels: |
+            org.opencontainers.image.title={{name}}
+            org.opencontainers.image.description={{description}}
+            org.opencontainers.image.vendor={{owner}}
 
       - name: Set platforms based on branch
         run: |
