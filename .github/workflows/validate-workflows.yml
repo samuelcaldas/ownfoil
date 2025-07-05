@@ -1,0 +1,35 @@
+name: Validate GitHub Actions
+
+on:
+  push:
+    paths:
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+
+jobs:
+  validate-workflows:
+    name: Validate GitHub Actions Workflows
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Validate YAML syntax
+        run: |
+          yamllint -c .yamllint.yml .github/workflows/
+
+      - name: Validate workflow syntax
+        uses: docker://rhymond/github-action-validate-yaml:latest
+        with:
+          yaml_file: '.github/workflows/*.yml'
+
+      - name: Summary
+        run: |
+          echo "## Workflow Validation Summary ✅" >> $GITHUB_STEP_SUMMARY
+          echo "All GitHub Actions workflows are syntactically valid." >> $GITHUB_STEP_SUMMARY
